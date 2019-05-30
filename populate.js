@@ -1,6 +1,7 @@
 const fs = require('fs');
 const got = require('got');
 const emoji = require('github-emoji');
+const axios = require("axios");
 const jsdom = require('jsdom').JSDOM,
     options = {
         resources: "usable"
@@ -36,34 +37,90 @@ module.exports.updateHTML = (username, sort, order, includeFork) => {
         (async () => {
             try {
                 console.log("Building HTML/CSS...");
-                var repos = [];
-                var tempRepos;
-                var page = 1;
-                if(sort == "star"){
-                    do{
-                        tempRepos = await got(`https://api.github.com/users/${username}/repos?per_page=100&page=${page++}`);
-                        tempRepos = JSON.parse(tempRepos.body);
-                        repos = repos.concat(tempRepos);
-                    } while(tempRepos.length == 100);
-                    if(order == "desc"){
-                        repos = repos.sort(function(a, b) {
-                            return  b.stargazers_count - a.stargazers_count;
-                        });
-                    }else{
-                        repos = repos.sort(function(a, b) {
-                            return a.stargazers_count - b.stargazers_count;
-                        });
+                // var repos = [];
+                // var tempRepos;
+                // var page = 1;
+                // if (sort == "star") {
+                //     do {
+                //         tempRepos = await got(`https://api.github.com/users/${username}/repos?per_page=100&page=${page++}`);
+                //         tempRepos = JSON.parse(tempRepos.body);
+                //         repos = repos.concat(tempRepos);
+                //     } while (tempRepos.length == 100);
+                //     if (order == "desc") {
+                //         repos = repos.sort(function (a, b) {
+                //             return b.stargazers_count - a.stargazers_count;
+                //         });
+                //     } else {
+                //         repos = repos.sort(function (a, b) {
+                //             return a.stargazers_count - b.stargazers_count;
+                //         });
+                //     }
+                // } else {
+                //     do {
+                //         tempRepos = await got(`https://api.github.com/users/${username}/repos?sort=${sort}&order=${order}&per_page=100&page=${page++}`);
+                //         tempRepos = JSON.parse(tempRepos.body);
+                //         repos = repos.concat(tempRepos);
+                //     } while (tempRepos.length == 100);
+                // }
+
+                const pinnedRepos = await axios({
+                    url: 'https://api.github.com/graphql',
+                    method: 'post',
+                    params: {
+                        access_token: '3025a637d447b01ab1ab/@/6f914ce6492754089130'.replace('/@/', ''),
+                    },
+                    data: {
+                        query: `
+                            {
+                                repositoryOwner(login: "Krystian19") {
+                                ... on User {
+                                        pinnedRepositories(first: 6) {
+                                            edges {
+                                                node {
+                                                    id
+                                                    name
+                                                    description
+                                                    url
+                                                    primaryLanguage {
+                                                        id
+                                                        name
+                                                    }
+                                                    stargazers {
+                                                        totalCount
+                                                    },
+                                                    forkCount
+                                                    createdAt
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                          
+                        `
                     }
-                }else{
-                    do{
-                        tempRepos = await got(`https://api.github.com/users/${username}/repos?sort=${sort}&order=${order}&per_page=100&page=${page++}`);
-                        tempRepos = JSON.parse(tempRepos.body);
-                        repos = repos.concat(tempRepos);
-                    } while(tempRepos.length == 100);
-                }
+                })
+
+                var repos = pinnedRepos.data.data.repositoryOwner.pinnedRepositories.edges.map(node => {
+                    let newNode = node.node;
+
+                    newNode.html_url = (newNode.url) ? newNode.url : '';
+                    newNode.language = (newNode.primaryLanguage) ? newNode.primaryLanguage.name : null;
+                    newNode.stargazers_count = (newNode.stargazers) ? newNode.stargazers.totalCount : 0;
+                    newNode.forks_count = (newNode.forkCount) ? newNode.forkCount : 0;
+
+                    // Remove unused fields
+                    delete newNode.primaryLanguage;
+                    delete newNode.stargazers;
+                    delete newNode.forkCount;
+
+                    return newNode;
+                })
+
+                console.dir(repos);
+
                 for (var i = 0; i < repos.length; i++) {
-                    if(repos[i].fork == false){
-                        document.getElementById("work_section").innerHTML += `
+                    document.getElementById("work_section").innerHTML += `
                         <a href="${repos[i].html_url}" target="_blank">
                         <section>
                             <div class="section_title">${repos[i].name}</div>
@@ -77,26 +134,44 @@ module.exports.updateHTML = (username, sort, order, includeFork) => {
                             </div>
                         </section>
                         </a>`;
-                    }else{
-                        if(includeFork == true){
-                            document.getElementById("forks").style.display = "block";
-                            document.getElementById("forks_section").innerHTML += `
-                            <a href="${repos[i].html_url}" target="_blank">
-                            <section>
-                                <div class="section_title">${repos[i].name}</div>
-                                <div class="about_section">
-                                <span style="display:${repos[i].description == undefined ? 'none' : 'block'};">${convertToEmoji(repos[i].description)}</span>
-                                </div>
-                                <div class="bottom_section">
-                                    <span style="display:${repos[i].language == null ? 'none' : 'inline-block'};"><i class="fas fa-code"></i>&nbsp; ${repos[i].language}</span>
-                                    <span><i class="fas fa-star"></i>&nbsp; ${repos[i].stargazers_count}</span>
-                                    <span><i class="fas fa-code-branch"></i>&nbsp; ${repos[i].forks_count}</span>
-                                </div>
-                            </section>
-                            </a>`;
-                        }
-                    }
                 }
+
+                // for (var i = 0; i < repos.length; i++) {
+                //     if (repos[i].fork == false) {
+                //         document.getElementById("work_section").innerHTML += `
+                //         <a href="${repos[i].html_url}" target="_blank">
+                //         <section>
+                //             <div class="section_title">${repos[i].name}</div>
+                //             <div class="about_section">
+                //             <span style="display:${repos[i].description == undefined ? 'none' : 'block'};">${convertToEmoji(repos[i].description)}</span>
+                //             </div>
+                //             <div class="bottom_section">
+                //                 <span style="display:${repos[i].language == null ? 'none' : 'inline-block'};"><i class="fas fa-code"></i>&nbsp; ${repos[i].language}</span>
+                //                 <span><i class="fas fa-star"></i>&nbsp; ${repos[i].stargazers_count}</span>
+                //                 <span><i class="fas fa-code-branch"></i>&nbsp; ${repos[i].forks_count}</span>
+                //             </div>
+                //         </section>
+                //         </a>`;
+                //     } else {
+                //         if (includeFork == true) {
+                //             document.getElementById("forks").style.display = "block";
+                //             document.getElementById("forks_section").innerHTML += `
+                //             <a href="${repos[i].html_url}" target="_blank">
+                //             <section>
+                //                 <div class="section_title">${repos[i].name}</div>
+                //                 <div class="about_section">
+                //                 <span style="display:${repos[i].description == undefined ? 'none' : 'block'};">${convertToEmoji(repos[i].description)}</span>
+                //                 </div>
+                //                 <div class="bottom_section">
+                //                     <span style="display:${repos[i].language == null ? 'none' : 'inline-block'};"><i class="fas fa-code"></i>&nbsp; ${repos[i].language}</span>
+                //                     <span><i class="fas fa-star"></i>&nbsp; ${repos[i].stargazers_count}</span>
+                //                     <span><i class="fas fa-code-branch"></i>&nbsp; ${repos[i].forks_count}</span>
+                //                 </div>
+                //             </section>
+                //             </a>`;
+                //         }
+                //     }
+                // }
                 var user = await got(`https://api.github.com/users/${username}`);
                 user = JSON.parse(user.body);
                 document.title = user.login;
