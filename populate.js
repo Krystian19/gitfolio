@@ -190,6 +190,7 @@ module.exports.updateHTML = (username, sort, order, includeFork) => {
                 <span style="display:${user.email == null || !user.email ? 'none' : 'block'};"><i class="fas fa-envelope"></i> &nbsp; ${user.email}</span>
                 <span style="display:${user.blog == null || !user.blog ? 'none' : 'block'};"><i class="fas fa-link"></i> &nbsp; <a href="${user.blog}">${user.blog}</a></span>
                 <span style="display:${user.location == null || !user.location ? 'none' : 'block'};"><i class="fas fa-map-marker-alt"></i> &nbsp;&nbsp; ${user.location}</span>
+                <span style="display: block"><i class="fab fa-linkedin-in"></i> &nbsp;&nbsp; <a href="https://www.linkedin.com/in/jan-guzman-3170b8148/">LinkedIn profile</a></span>
                 <span style="display:${user.hireable == false || !user.hireable ? 'none' : 'block'};"><i class="fas fa-user-tie"></i> &nbsp;&nbsp; Available for hire</span>`;
                 //add data to config.json
                 const data = await getConfig();
