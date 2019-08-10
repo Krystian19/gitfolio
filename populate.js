@@ -181,14 +181,13 @@ module.exports.updateHTML = (username, sort, order, includeFork) => {
                 icon.setAttribute("type", "image/png");
                 document.getElementsByTagName("head")[0].appendChild(icon);
                 document.getElementById("profile_img").style.background = `url('${user.avatar_url}') center center`
-                document.getElementById("username").innerHTML = `<span style="display:${user.name == null || !user.name ? 'none' : 'block'};">${user.name}</span><a href="${user.html_url}">@${user.login}</a>`;
+                document.getElementById("username").innerHTML = `<span style="display:${user.name == null || !user.name ? 'none' : 'block'};">${user.name}</span><a href="${user.html_url}">${user.html_url}</a>`;
                 //document.getElementById("github_link").href = `https://github.com/${user.login}`;
                 document.getElementById("userbio").innerHTML = convertToEmoji(user.bio);
                 document.getElementById("userbio").style.display = user.bio == null || !user.bio ? 'none' : 'block';
                 document.getElementById("about").innerHTML = `
                 <span style="display:${user.company == null || !user.company ? 'none' : 'block'};"><i class="fas fa-users"></i> &nbsp; ${user.company}</span>
                 <span style="display:${user.email == null || !user.email ? 'none' : 'block'};"><i class="fas fa-envelope"></i> &nbsp; ${user.email}</span>
-                <span style="display:${user.blog == null || !user.blog ? 'none' : 'block'};"><i class="fas fa-link"></i> &nbsp; <a href="${user.blog}">${user.blog}</a></span>
                 <span style="display:${user.location == null || !user.location ? 'none' : 'block'};"><i class="fas fa-map-marker-alt"></i> &nbsp;&nbsp; ${user.location}</span>
                 <span style="display: block"><i class="fab fa-linkedin-in"></i> &nbsp;&nbsp; <a href="https://www.linkedin.com/in/jan-guzman-3170b8148/">LinkedIn profile</a></span>
                 <span style="display:${user.hireable == false || !user.hireable ? 'none' : 'block'};"><i class="fas fa-user-tie"></i> &nbsp;&nbsp; Available for hire</span>`;
